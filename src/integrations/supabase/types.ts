@@ -19,31 +19,34 @@ export type Database = {
           author_id: string | null
           created_at: string | null
           description: string | null
-          file_path: string
+          file_url: string
           id: string
           is_public: boolean | null
           subject_id: number | null
           title: string
+          uploaded_at: string | null
         }
         Insert: {
           author_id?: string | null
           created_at?: string | null
           description?: string | null
-          file_path: string
+          file_url: string
           id?: string
           is_public?: boolean | null
           subject_id?: number | null
           title: string
+          uploaded_at?: string | null
         }
         Update: {
           author_id?: string | null
           created_at?: string | null
           description?: string | null
-          file_path?: string
+          file_url?: string
           id?: string
           is_public?: boolean | null
           subject_id?: number | null
           title?: string
+          uploaded_at?: string | null
         }
         Relationships: [
           {
