@@ -177,10 +177,11 @@ export default function People() {
                   </div>
                 </CardHeader>
                 <CardContent className="text-center space-y-2">
-                  <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                  {/*<div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
                     <Mail className="w-4 h-4" />
                     <span className="truncate">{profile.email}</span>
                   </div>
+                  */}
                   {profile.username && (
                     <div className="text-sm text-muted-foreground">
                       @{profile.username}
