@@ -46,6 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Extract user data from OTP record
     const userData = otpRecord.user_data as {
       email: string;
+      password: string;
       fullName: string;
       role: string;
     };
@@ -53,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Create the user account using Supabase Auth Admin API
     const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
       email: userData.email,
-      password: Math.random().toString(36).slice(-12), // Temporary password
+      password: userData.password,
       email_confirm: true, // Auto-confirm email since we verified OTP
       user_metadata: {
         full_name: userData.fullName,

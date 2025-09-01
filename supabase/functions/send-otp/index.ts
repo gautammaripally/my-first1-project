@@ -11,6 +11,7 @@ const corsHeaders = {
 
 interface SendOTPRequest {
   email: string;
+  password: string;
   fullName: string;
   role: string;
 }
@@ -22,7 +23,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, fullName, role }: SendOTPRequest = await req.json();
+    const { email, password, fullName, role }: SendOTPRequest = await req.json();
 
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -39,11 +40,12 @@ const handler = async (req: Request): Promise<Response> => {
       .insert({
         email: email,
         otp_code: otpCode,
-        user_data: {
-          email,
-          fullName,
-          role
-        }
+      user_data: {
+        email,
+        password,
+        fullName,
+        role
+      }
       });
 
     if (dbError) {

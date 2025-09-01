@@ -75,6 +75,7 @@ export default function Auth() {
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: {
           email: signupEmail,
+          password: signupPassword,
           fullName,
           role
         }
@@ -136,12 +137,13 @@ export default function Auth() {
       } else {
         toast({
           title: "Account Created Successfully!",
-          description: "You can now log in with your email and any password.",
+          description: "You can now log in with your email and password.",
         });
         // Reset form and show login
         setShowOTPInput(false);
         setOtpValue('');
         setSignupEmail('');
+        setSignupPassword('');
         setFullName('');
         setRole('student');
         // Switch to login tab
@@ -243,6 +245,18 @@ export default function Auth() {
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
                         required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Create a strong password"
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        required
+                        minLength={6}
                       />
                     </div>
                     <div className="space-y-2">
