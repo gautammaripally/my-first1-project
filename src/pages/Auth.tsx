@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/components/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { GraduationCap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { GraduationCap, ArrowLeft } from 'lucide-react';
 
 export default function Auth() {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -24,6 +26,11 @@ export default function Auth() {
   const [signupPassword, setSignupPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('student');
+
+  // OTP verification state
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const [otpValue, setOtpValue] = useState('');
+  const [otpEmail, setOtpEmail] = useState('');
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -64,18 +71,27 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { error } = await signUp(signupEmail, signupPassword, fullName, role);
-      
+      // Call edge function to send OTP
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: {
+          email: signupEmail,
+          fullName,
+          role
+        }
+      });
+
       if (error) {
         toast({
           title: "Registration Failed",
-          description: error.message,
+          description: "Failed to send verification code. Please try again.",
           variant: "destructive",
         });
       } else {
+        setOtpEmail(signupEmail);
+        setShowOTPInput(true);
         toast({
-          title: "Welcome to Campus Notes Hub!",
-          description: "Your account has been created successfully.",
+          title: "Verification Code Sent!",
+          description: "Please check your email for the 6-digit verification code.",
         });
       }
     } catch (error) {
@@ -87,6 +103,65 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOTPVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpValue.length !== 6) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter a 6-digit verification code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Call edge function to verify OTP
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: {
+          email: otpEmail,
+          otpCode: otpValue
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Verification Failed",
+          description: "Invalid or expired verification code.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Account Created Successfully!",
+          description: "You can now log in with your email and any password.",
+        });
+        // Reset form and show login
+        setShowOTPInput(false);
+        setOtpValue('');
+        setSignupEmail('');
+        setFullName('');
+        setRole('student');
+        // Switch to login tab
+        const loginTab = document.querySelector('[value="login"]') as HTMLElement;
+        loginTab?.click();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToSignup = () => {
+    setShowOTPInput(false);
+    setOtpValue('');
   };
 
   return (
@@ -146,55 +221,97 @@ export default function Auth() {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
+                {!showOTPInput ? (
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Input
+                        id="signup-name"
+                        type="text"
+                        placeholder="John Doe"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="student@university.edu"
+                        value={signupEmail}
+                        onChange={(e) => setSignupEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Role</Label>
+                      <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="teacher">Teacher</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Sending Code..." : "Send Verification Code"}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <h3 className="text-lg font-semibold text-campus-navy">Verify Your Email</h3>
+                      <p className="text-sm text-muted-foreground">
+                        We've sent a 6-digit verification code to<br />
+                        <span className="font-medium text-campus-blue">{otpEmail}</span>
+                      </p>
+                    </div>
+                    
+                    <form onSubmit={handleOTPVerification} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="otp-input">Verification Code</Label>
+                        <div className="flex justify-center">
+                          <InputOTP
+                            value={otpValue}
+                            onChange={setOtpValue}
+                            maxLength={6}
+                            id="otp-input"
+                          >
+                            <InputOTPGroup>
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Button type="submit" className="w-full" disabled={loading || otpValue.length !== 6}>
+                          {loading ? "Verifying..." : "Verify & Create Account"}
+                        </Button>
+                        
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="w-full" 
+                          onClick={handleBackToSignup}
+                          disabled={loading}
+                        >
+                          <ArrowLeft className="w-4 h-4 mr-2" />
+                          Back to Sign Up
+                        </Button>
+                      </div>
+                    </form>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="student@university.edu"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={role} onValueChange={setRole}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="teacher">Teacher</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
