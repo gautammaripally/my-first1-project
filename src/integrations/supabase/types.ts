@@ -171,6 +171,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      validate_and_get_otp: {
+        Args: { p_email: string; p_otp_code: string }
+        Returns: {
+          is_valid: boolean
+          otp_id: string
+          user_data: Json
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

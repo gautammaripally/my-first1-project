@@ -26,25 +26,23 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Find valid OTP
-    const { data: otpRecord, error: otpError } = await supabaseClient
-      .from("otp_verifications")
-      .select("*")
-      .eq("email", email)
-      .eq("otp_code", otpCode)
-      .eq("verified", false)
-      .gt("expires_at", new Date().toISOString())
+    // Use secure function to validate OTP and get user data
+    const { data: otpResult, error: otpError } = await supabaseClient
+      .rpc("validate_and_get_otp", {
+        p_email: email,
+        p_otp_code: otpCode
+      })
       .single();
 
-    if (otpError || !otpRecord) {
+    if (otpError || !otpResult || !otpResult.is_valid || !otpResult.otp_id) {
       return new Response(
         JSON.stringify({ error: "Invalid or expired verification code" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Extract user data from OTP record
-    const userData = otpRecord.user_data as {
+    // Extract user data from OTP result
+    const userData = otpResult.user_data as {
       email: string;
       password: string;
       fullName: string;
@@ -74,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { error: updateError } = await supabaseClient
       .from("otp_verifications")
       .update({ verified: true })
-      .eq("id", otpRecord.id);
+      .eq("id", otpResult.otp_id);
 
     if (updateError) {
       console.error("Update error:", updateError);
