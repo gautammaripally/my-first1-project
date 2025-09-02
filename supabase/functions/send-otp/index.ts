@@ -2,7 +2,13 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Check if Resend API key is configured
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+if (!resendApiKey) {
+  console.error("RESEND_API_KEY environment variable is not set");
+}
+
+const resend = new Resend(resendApiKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,7 +29,18 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check if Resend API key is available
+    if (!resendApiKey) {
+      console.error("Resend API key not configured");
+      return new Response(
+        JSON.stringify({ error: "Email service not configured. Please contact support." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { email, password, fullName, role }: SendOTPRequest = await req.json();
+    
+    console.log("Processing OTP request for email:", email);
 
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -57,6 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send email with OTP
+    console.log("Attempting to send OTP email to:", email);
     const emailResponse = await resend.emails.send({
       from: "Campus Notes Hub <onboarding@resend.dev>",
       to: [email],
@@ -106,9 +124,18 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (emailResponse.error) {
-      console.error("Email error:", emailResponse.error);
+      console.error("Email error details:", JSON.stringify(emailResponse.error));
+      
+      // Provide specific error messages based on the error type
+      let errorMessage = "Failed to send verification email";
+      if (emailResponse.error.message?.includes("API key")) {
+        errorMessage = "Email service configuration error. Please contact support.";
+      } else if (emailResponse.error.message?.includes("domain")) {
+        errorMessage = "Email domain not verified. Please contact support.";
+      }
+      
       return new Response(
-        JSON.stringify({ error: "Failed to send email" }),
+        JSON.stringify({ error: errorMessage }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
