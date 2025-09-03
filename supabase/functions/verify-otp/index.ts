@@ -60,8 +60,26 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    if (authError || !authData.user) {
+    if (authError) {
       console.error("Auth error:", authError);
+      
+      // Handle specific error cases
+      if (authError.message?.includes("already been registered") || 
+          authError.message?.includes("email_exists")) {
+        return new Response(
+          JSON.stringify({ error: "An account with this email already exists. Please try logging in instead." }),
+          { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ error: "Failed to create user account. Please try again." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!authData.user) {
+      console.error("No user data returned from auth");
       return new Response(
         JSON.stringify({ error: "Failed to create user account" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }

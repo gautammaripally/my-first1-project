@@ -129,11 +129,34 @@ export default function Auth() {
       });
 
       if (error) {
+        console.error("OTP verification error:", error);
         toast({
           title: "Verification Failed",
           description: "Invalid or expired verification code.",
           variant: "destructive",
         });
+      } else if (data?.error) {
+        console.error("OTP verification data error:", data.error);
+        
+        // Handle specific error cases
+        if (data.error.includes("already exists")) {
+          toast({
+            title: "Account Already Exists",
+            description: "An account with this email already exists. Please try logging in instead.",
+            variant: "destructive",
+          });
+          // Switch to login tab
+          setShowOTPInput(false);
+          setOtpValue('');
+          const loginTab = document.querySelector('[value="login"]') as HTMLElement;
+          loginTab?.click();
+        } else {
+          toast({
+            title: "Verification Failed",
+            description: data.error,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Account Created Successfully!",
