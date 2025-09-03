@@ -280,14 +280,15 @@ export default function Notes() {
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(note.uploaded_at).toLocaleDateString()}</span>
                     </div>
-                    <Button
-                      onClick={() => downloadFile(note.file_url, note.title)}
-                      className="w-full flex items-center space-x-2"
-                      variant="outline"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </Button>
+                    <a href={note.file_url} download={note.title}>
+                      <Button
+                        className="w-full flex items-center space-x-2"
+                        variant="outline"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download</span>
+                      </Button>
+                    </a>
                   </div>
                 </CardContent>
               </Card>
