@@ -10,7 +10,6 @@ import { Users, Search, Mail, User, GraduationCap } from 'lucide-react';
 interface Profile {
   id: string;
   full_name: string;
-  email: string;
   role: string;
   username?: string;
   created_at: string;
@@ -31,8 +30,8 @@ export default function People() {
     // Filter profiles based on search term
     const filtered = profiles.filter(profile =>
       profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.role?.toLowerCase().includes(searchTerm.toLowerCase())
+      profile.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.username?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredProfiles(filtered);
   }, [profiles, searchTerm]);
@@ -41,7 +40,7 @@ export default function People() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, role, username, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -132,7 +131,7 @@ export default function People() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search by name, email, or role..."
+              placeholder="Search by name, username, or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
