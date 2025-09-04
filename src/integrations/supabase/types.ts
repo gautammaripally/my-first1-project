@@ -58,36 +58,6 @@ export type Database = {
           },
         ]
       }
-      otp_verifications: {
-        Row: {
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          otp_code: string
-          user_data: Json
-          verified: boolean
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          expires_at?: string
-          id?: string
-          otp_code: string
-          user_data: Json
-          verified?: boolean
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          otp_code?: string
-          user_data?: Json
-          verified?: boolean
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string | null
@@ -167,22 +137,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_email_exists: {
-        Args: { p_email: string }
-        Returns: boolean
-      }
-      cleanup_expired_otps: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      validate_and_get_otp: {
-        Args: { p_email: string; p_otp_code: string }
-        Returns: {
-          is_valid: boolean
-          otp_id: string
-          user_data: Json
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
