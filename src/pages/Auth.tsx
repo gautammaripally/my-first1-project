@@ -81,18 +81,45 @@ export default function Auth() {
         }
       });
 
-      if (error) {
-        toast({
-          title: "Registration Failed",
-          description: "Failed to send verification code. Please try again.",
-          variant: "destructive",
-        });
+      if (error || data?.error) {
+        const errorMsg = data?.error || error?.message || "Failed to send verification code";
+        const errorType = data?.errorType;
+
+        if (errorType === "email_exists") {
+          toast({
+            title: "Account Already Exists",
+            description: "An account with this email already exists. Please try logging in instead.",
+            variant: "destructive",
+          });
+          // Switch to login tab
+          const loginTab = document.querySelector('[value="login"]') as HTMLElement;
+          loginTab?.click();
+          setLoginEmail(signupEmail); // Pre-fill login email
+        } else if (errorType === "domain_verification_required") {
+          toast({
+            title: "Email Service Configuration",
+            description: "The email service is in testing mode. Please contact support for full email delivery.",
+            variant: "destructive",
+          });
+        } else if (errorType === "service_config_error") {
+          toast({
+            title: "Service Configuration Error",
+            description: "Email service not properly configured. Please contact support.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: errorMsg,
+            variant: "destructive",
+          });
+        }
       } else {
         setOtpEmail(signupEmail);
         setShowOTPInput(true);
         toast({
           title: "Verification Code Sent!",
-          description: "Please check your email for the 6-digit verification code.",
+          description: "Please check your email for the 6-digit verification code. It will expire in 10 minutes.",
         });
       }
     } catch (error) {
@@ -128,32 +155,40 @@ export default function Auth() {
         }
       });
 
-      if (error) {
-        console.error("OTP verification error:", error);
-        toast({
-          title: "Verification Failed",
-          description: "Invalid or expired verification code.",
-          variant: "destructive",
-        });
-      } else if (data?.error) {
-        console.error("OTP verification data error:", data.error);
+      if (error || data?.error) {
+        const errorMsg = data?.error || error?.message || "Verification failed";
+        const errorType = data?.errorType;
+
+        console.error("OTP verification error:", error || data?.error);
         
-        // Handle specific error cases
-        if (data.error.includes("already exists")) {
+        if (errorType === "invalid_otp") {
+          toast({
+            title: "Invalid Verification Code",
+            description: "The code you entered is invalid or has expired. Please check your code or request a new one.",
+            variant: "destructive",
+          });
+        } else if (errorType === "user_already_exists") {
           toast({
             title: "Account Already Exists",
             description: "An account with this email already exists. Please try logging in instead.",
             variant: "destructive",
           });
-          // Switch to login tab
+          // Switch to login tab and pre-fill email
           setShowOTPInput(false);
           setOtpValue('');
           const loginTab = document.querySelector('[value="login"]') as HTMLElement;
           loginTab?.click();
+          setLoginEmail(otpEmail);
+        } else if (errorType === "account_creation_failed") {
+          toast({
+            title: "Account Creation Failed",
+            description: "Failed to create your account. Please try again or contact support.",
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Verification Failed",
-            description: data.error,
+            description: errorMsg,
             variant: "destructive",
           });
         }
@@ -169,9 +204,10 @@ export default function Auth() {
         setSignupPassword('');
         setFullName('');
         setRole('student');
-        // Switch to login tab
+        // Switch to login tab and pre-fill email
         const loginTab = document.querySelector('[value="login"]') as HTMLElement;
         loginTab?.click();
+        setLoginEmail(otpEmail);
       }
     } catch (error) {
       toast({

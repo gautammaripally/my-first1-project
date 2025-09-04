@@ -42,14 +42,37 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log("Processing OTP request for email:", email);
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
     // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Check if email already exists in auth.users
+    const { data: emailExists, error: checkError } = await supabaseClient
+      .rpc("check_email_exists", { p_email: email });
+
+    if (checkError) {
+      console.error("Error checking email existence:", checkError);
+      return new Response(
+        JSON.stringify({ error: "Failed to verify email availability" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (emailExists) {
+      console.log("Email already exists:", email);
+      return new Response(
+        JSON.stringify({ 
+          error: "An account with this email already exists. Please try logging in instead.",
+          errorType: "email_exists" 
+        }),
+        { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store OTP in database with user signup data
     const { error: dbError } = await supabaseClient
@@ -128,14 +151,19 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Provide specific error messages based on the error type
       let errorMessage = "Failed to send verification email";
+      let errorType = "email_send_failed";
+      
       if (emailResponse.error.message?.includes("API key")) {
-        errorMessage = "Email service configuration error. Please contact support.";
-      } else if (emailResponse.error.message?.includes("domain")) {
-        errorMessage = "Email domain not verified. Please contact support.";
+        errorMessage = "Email service not properly configured. Please contact support.";
+        errorType = "service_config_error";
+      } else if (emailResponse.error.message?.includes("domain") || 
+                 emailResponse.error.message?.includes("testing emails")) {
+        errorMessage = "Email service is in testing mode. Please contact support to enable full email delivery.";
+        errorType = "domain_verification_required";
       }
       
       return new Response(
-        JSON.stringify({ error: errorMessage }),
+        JSON.stringify({ error: errorMessage, errorType }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

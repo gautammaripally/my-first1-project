@@ -35,14 +35,33 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (otpError || !otpResult || !otpResult.is_valid || !otpResult.otp_id) {
+      console.log("Invalid OTP attempt for email:", email);
       return new Response(
-        JSON.stringify({ error: "Invalid or expired verification code" }),
+        JSON.stringify({ 
+          error: "Invalid or expired verification code. Please check your code or request a new one.",
+          errorType: "invalid_otp" 
+        }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Extract user data from OTP result
-    const userData = otpResult.user_data as {
+    // Get the original user data with password (since validation function redacts it)
+    const { data: otpRecord, error: otpFetchError } = await supabaseClient
+      .from("otp_verifications")
+      .select("user_data")
+      .eq("id", otpResult.otp_id)
+      .single();
+
+    if (otpFetchError || !otpRecord) {
+      console.error("Failed to fetch OTP record:", otpFetchError);
+      return new Response(
+        JSON.stringify({ error: "Failed to process verification" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Extract user data from OTP record
+    const userData = otpRecord.user_data as {
       email: string;
       password: string;
       fullName: string;
@@ -65,15 +84,22 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Handle specific error cases
       if (authError.message?.includes("already been registered") || 
-          authError.message?.includes("email_exists")) {
+          authError.message?.includes("email_exists") ||
+          authError.message?.includes("User already registered")) {
         return new Response(
-          JSON.stringify({ error: "An account with this email already exists. Please try logging in instead." }),
+          JSON.stringify({ 
+            error: "An account with this email already exists. Please try logging in instead.",
+            errorType: "user_already_exists"
+          }),
           { status: 409, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
       
       return new Response(
-        JSON.stringify({ error: "Failed to create user account. Please try again." }),
+        JSON.stringify({ 
+          error: "Failed to create user account. Please try again.",
+          errorType: "account_creation_failed" 
+        }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
