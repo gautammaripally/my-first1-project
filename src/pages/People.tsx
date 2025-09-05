@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/layout/Navigation';
-import { Users, Search, Mail, User, GraduationCap } from 'lucide-react';
+import { Users, Search, User, GraduationCap } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -18,32 +18,18 @@ interface Profile {
 export default function People() {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchProfiles();
-  }, []);
-
-  useEffect(() => {
-    // Filter profiles based on search term
-    const filtered = profiles.filter(profile =>
-      profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.username?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredProfiles(filtered);
-  }, [profiles, searchTerm]);
-
   const fetchProfiles = async () => {
     try {
+      // Fetch all users from the 'profiles' table
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, role, username, created_at')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) throw error;
+      
       setProfiles(data || []);
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -56,6 +42,15 @@ export default function People() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
+
+  const filteredProfiles = profiles.filter(profile =>
+    profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    profile.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -131,7 +126,7 @@ export default function People() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search by name, username, or role..."
+              placeholder="Search by name or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -176,11 +171,6 @@ export default function People() {
                   </div>
                 </CardHeader>
                 <CardContent className="text-center space-y-2">
-                  {/*<div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                    <Mail className="w-4 h-4" />
-                    <span className="truncate">{profile.email}</span>
-                  </div>
-                  */}
                   {profile.username && (
                     <div className="text-sm text-muted-foreground">
                       @{profile.username}

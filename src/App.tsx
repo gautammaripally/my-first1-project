@@ -13,6 +13,7 @@ import Updates from "./pages/Updates";
 import People from "./pages/People";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import OtpVerification from "./pages/OtpVerification";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/otp-verification" element={<OtpVerification />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
             <Route path="/updates" element={<ProtectedRoute><Updates /></ProtectedRoute>} />

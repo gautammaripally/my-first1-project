@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import { GraduationCap } from 'lucide-react';
 export default function Auth() {
   const { user, signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   // Login form state
@@ -60,23 +61,20 @@ export default function Auth() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSendVerificationCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
       const { error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
-            role: role
-          }
-        }
+            role: role,
+          },
+        },
       });
 
       if (error) {
@@ -86,7 +84,6 @@ export default function Auth() {
             description: "An account with this email already exists. Please try logging in instead.",
             variant: "destructive",
           });
-          // Switch to login tab
           const loginTab = document.querySelector('[value="login"]') as HTMLElement;
           loginTab?.click();
           setLoginEmail(signupEmail);
@@ -98,15 +95,13 @@ export default function Auth() {
           });
         }
       } else {
+        // Send OTP
+        await supabase.auth.signInWithPassword({ email: signupEmail, password: signupPassword });
         toast({
           title: "Check Your Email!",
-          description: "We've sent you a confirmation link. Please check your email and click the link to activate your account.",
+          description: "We've sent you an OTP. Please check your email and enter the OTP to activate your account.",
         });
-        // Reset form
-        setSignupEmail('');
-        setSignupPassword('');
-        setFullName('');
-        setRole('student');
+        navigate('/otp-verification', { state: { email: signupEmail, password: signupPassword } });
       }
     } catch (error) {
       toast({
@@ -118,7 +113,6 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
@@ -177,7 +171,7 @@ export default function Auth() {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSendVerificationCode} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <Input
@@ -225,7 +219,7 @@ export default function Auth() {
                     </Select>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating Account..." : "Sign Up"}
+                    {loading ? "Sending..." : "Send Verification Code"}
                   </Button>
                 </form>
               </TabsContent>
