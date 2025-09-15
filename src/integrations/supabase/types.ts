@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      auth_rate_limits: {
+        Row: {
+          attempt_type: string
+          attempts: number | null
+          blocked_until: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          ip_address: unknown
+          window_start: string | null
+        }
+        Insert: {
+          attempt_type: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address: unknown
+          window_start?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           author_id: string | null
@@ -167,9 +200,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_attempt_type?: string
+          p_email?: string
+          p_ip_address: unknown
+          p_max_attempts?: number
+          p_window_minutes?: number
+        }
+        Returns: Json
+      }
       cleanup_expired_otps: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      sanitize_text_input: {
+        Args: { input_text: string }
+        Returns: string
       }
       verify_otp_code: {
         Args: { p_email: string; p_otp_code: string }
