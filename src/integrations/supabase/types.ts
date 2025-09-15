@@ -171,6 +171,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      verify_otp_code: {
+        Args: { p_email: string; p_otp_code: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
