@@ -23,10 +23,10 @@ export default function People() {
 
   const fetchProfiles = async () => {
     try {
-      // Fetch all users from the 'profiles' table
+      // Fetch only public profile fields (excluding sensitive data like email)
       const { data, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('id, full_name, role, username, created_at');
 
       if (error) throw error;
       

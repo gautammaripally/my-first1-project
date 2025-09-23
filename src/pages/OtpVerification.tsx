@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { checkRateLimit, getSecureErrorMessage } from '@/utils/authValidation';
 
 export default function OtpVerification() {
   const [otp, setOtp] = useState('');
@@ -23,6 +24,18 @@ export default function OtpVerification() {
   const handleVerifyOtp = async () => {
     setLoading(true);
     try {
+      // Check rate limiting
+      const rateLimitResult = await checkRateLimit(email, 'otp');
+      if (!rateLimitResult.allowed) {
+        toast({
+          title: "Too Many Attempts",
+          description: rateLimitResult.error || 'Please try again later.',
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
@@ -41,7 +54,7 @@ export default function OtpVerification() {
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        description: getSecureErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
