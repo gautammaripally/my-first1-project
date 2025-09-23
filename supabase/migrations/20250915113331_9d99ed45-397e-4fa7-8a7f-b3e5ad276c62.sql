@@ -1,4 +1,4 @@
--- Create rate limiting table for authentication attempts
+w-- Create rate limiting table for authentication attempts
 CREATE TABLE IF NOT EXISTS public.auth_rate_limits (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   ip_address INET NOT NULL,
