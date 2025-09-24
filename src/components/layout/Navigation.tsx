@@ -16,6 +16,10 @@ export default function Navigation() {
   const { signOut, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const handleSignOut = async () => {
+    await signOut(); 
+    navigate('/'); // Redirect to home
+  };
 
 
   const navItems = [
@@ -27,10 +31,7 @@ export default function Navigation() {
   ];
 
   const isActive = (path: string) => location.pathname === path;
-  const handleSignOut = async () => {
-    await signOut(); 
-    navigate('/'); // Redirect to home
-  };
+  
   return (
     <nav className="bg-card border-b border-border shadow-card-custom">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
