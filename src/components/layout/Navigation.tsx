@@ -18,7 +18,7 @@ export default function Navigation() {
   const navigate = useNavigate();
   const handleSignOut = async () => {
     await signOut(); 
-    navigate('/'); // Redirect to home
+    navigate('/my-first1-project/'); // Redirect to home
   };
 
 
