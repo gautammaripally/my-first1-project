@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut({ scope: 'global' });
-      window.location.href = '/';
+      window.location.href = '/my-first1-project/';
     } catch (error) {
       console.error('Error signing out:', error);
     }
