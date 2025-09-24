@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -14,6 +15,8 @@ import {
 export default function Navigation() {
   const { signOut, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: Home },
@@ -24,7 +27,10 @@ export default function Navigation() {
   ];
 
   const isActive = (path: string) => location.pathname === path;
-
+  const handleSignOut = async () => {
+    await signOut(); 
+    navigate('/'); // Redirect to home
+  };
   return (
     <nav className="bg-card border-b border-border shadow-card-custom">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,11 +64,11 @@ export default function Navigation() {
               Welcome, {user?.user_metadata?.full_name || user?.email}
             </span>
             <Button
-              onClick={signOut}
+              onClick={handleSignOut}
               variant="outline"
               size="sm"
               className="flex items-center space-x-2"
-            >
+              >
               <LogOut className="w-4 h-4" />
               <span>Sign Out</span>
             </Button>
